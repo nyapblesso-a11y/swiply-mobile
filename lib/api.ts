@@ -3,7 +3,7 @@ import { tokenStorage } from './secure-store';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-export const api = axios.create({ baseURL: API_URL });
+export const api = axios.create({ baseURL: API_URL, timeout: 8000 });
 
 // Attach access token to every outgoing request
 api.interceptors.request.use(async (config) => {

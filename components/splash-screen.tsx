@@ -152,16 +152,13 @@ function WelcomeText() {
   );
 }
 
-export function SplashOverlay({ onFinish }: { onFinish: () => void }) {
+export function SplashOverlay() {
   const [layoutReady, setLayoutReady] = useState(false);
   const buildOpacity = useSharedValue(1);
 
   useEffect(() => {
     if (!layoutReady) return;
-    buildOpacity.value = withDelay(2400, withTiming(0, { duration: 500 }));
-
-    const timer = setTimeout(onFinish, 3400);
-    return () => clearTimeout(timer);
+    buildOpacity.value = withDelay(2400, withTiming(0, { duration: 500 }));   
   }, [layoutReady]);
 
   const buildStyle = useAnimatedStyle(() => ({

@@ -1,8 +1,8 @@
-import { Redirect } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/lib/auth-context';
 
-export default function Index() {
+export default function AuthLayout() {
   const { user, isLoading, hasCv } = useAuth();
 
   if (isLoading || (user && hasCv === null)) {
@@ -13,6 +13,7 @@ export default function Index() {
     );
   }
 
-  if (!user) return <Redirect href="/(auth)/login" />;
-  return <Redirect href={hasCv ? '/(tabs)/swipe' : '/cv-upload'} />;
+  if (user) return <Redirect href={hasCv ? '/(tabs)/swipe' : '/cv-upload'} />;
+
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
