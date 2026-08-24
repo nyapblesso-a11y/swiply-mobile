@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useColorScheme } from 'react-native';
@@ -11,17 +11,12 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [showSplash, setShowSplash] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 3500);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
         <MatchesProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            {showSplash && <SplashOverlay />}
+            {showSplash && <SplashOverlay onFinish={() => setShowSplash(false)} />}
             <Slot />
           </ThemeProvider>
         </MatchesProvider>
