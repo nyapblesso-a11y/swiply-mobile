@@ -92,7 +92,7 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   centered: { flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  header: { fontSize: 22, fontWeight: '600', color: NAVY, padding: 20, paddingBottom: 8 },
+  header: { fontSize: 22, fontWeight: '600', color: NAVY, padding: 20, paddingBottom: 8, textAlign: 'center' , marginTop: 17, marginBottom: 6},
   emptyTitle: { fontSize: 18, fontWeight: '600', color: NAVY, marginBottom: 6 },
   emptySubtitle: { fontSize: 14, color: GRAY, textAlign: 'center' },
   row: {

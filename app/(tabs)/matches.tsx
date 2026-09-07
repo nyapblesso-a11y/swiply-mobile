@@ -74,30 +74,39 @@ export default function MatchesScreen() {
     try {
       await api.delete(`/jobs/matches/${id}`);
     } catch {
-      setMatches(previous); // roll back on failure
+      setMatches(previous); 
       setMatchesCount(previous.length);
       Alert.alert('Could not remove match', 'Please try again.');
     }
   }
 
   async function handleGenerate() {
-    if (selected.size === 0) return;
-    setGenerating(true);
-    try {
-      await api.post('/documents/generate', { swipeIds: Array.from(selected) });
-      Alert.alert('Started', 'Generating your tailored documents.');
-      setSelected(new Set());
-      router.push('/(tabs)/history');
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        Alert.alert('Coming soon', 'Document generation isn\'t wired up yet.');
-      } else {
-        Alert.alert('Generation failed', err.response?.data?.message ?? 'Please try again.');
-      }
-    } finally {
-      setGenerating(false);
+  if (selected.size === 0) return;
+  setGenerating(true);
+  try {
+    await api.post(
+      '/documents/generate',
+      { swipeIds: Array.from(selected) },
+      { timeout: 90000 } 
+    );
+    Alert.alert('Success', 'Your tailored CV and cover letter are ready in History.');
+    setSelected(new Set());
+    router.push('/(tabs)/history');
+  } catch (err: any) {
+    if (err.response?.status === 404) {
+      Alert.alert('Coming soon', 'Document generation isn\'t wired up yet.');
+    } else if (err.code === 'ECONNABORTED') {
+      Alert.alert(
+        'Still working',
+        'This is taking longer than expected. Check History in a minute — it may still complete.'
+      );
+    } else {
+      Alert.alert('Generation failed', err.response?.data?.message ?? 'Please try again.');
     }
+  } finally {
+    setGenerating(false);
   }
+}
 
   if (loading) {
     return (

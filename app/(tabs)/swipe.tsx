@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, Linking, Dimensions } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { api } from '@/lib/api';
 import { useMatches } from '@/lib/matches-context';
+import { FONTS } from '@/constants/fonts';
 
 type Job = {
   id: string;
@@ -58,11 +59,13 @@ function SwipeCard({
   job,
   onSwiped,
   onApply,
+  onOpenDetail,
   isTop,
 }: {
   job: Job;
   onSwiped: (decision: 'accepted' | 'rejected') => void;
   onApply: (job: Job) => void;
+  onOpenDetail: (jobId: string) => void;
   isTop: boolean;
 }) {
   const translateX = useSharedValue(0);
@@ -96,6 +99,15 @@ function SwipeCard({
       }
     });
 
+  const tapGesture = Gesture.Tap()
+    .enabled(isTop)
+    .maxDistance(10)
+    .onEnd(() => {
+      runOnJS(onOpenDetail)(job.id);
+    });
+
+  const composedGesture = Gesture.Race(panGesture, tapGesture);
+
   const cardStyle = useAnimatedStyle(() => {
     const rotate = interpolate(translateX.value, [-300, 0, 300], [-18, 0, 18], Extrapolation.CLAMP);
     return {
@@ -118,7 +130,7 @@ function SwipeCard({
   const isRemote = /remote/i.test(job.location);
 
   return (
-    <GestureDetector gesture={panGesture}>
+    <GestureDetector gesture={composedGesture}>
       <Animated.View style={[styles.card, cardStyle]}>
         <Animated.View style={[styles.badge, styles.likeBadge, likeStyle]}>
           <Text style={[styles.badgeText, { color: TEAL }]}>LIKE</Text>
@@ -145,9 +157,10 @@ function SwipeCard({
             </View>
           )}
 
-          <Text style={styles.jobDescription} numberOfLines={8}>
+          <Text style={styles.jobDescription} numberOfLines={6}>
             {job.description}
           </Text>
+          <Text style={styles.readMore}>Tap card for full details</Text>
         </View>
 
         <Pressable style={styles.applyButton} onPress={() => onApply(job)}>
@@ -211,6 +224,10 @@ export default function SwipeScreen() {
     }
   }
 
+  function handleOpenDetail(jobId: string) {
+    router.push(`/job/${jobId}`);
+  }
+
   function manualSwipe(direction: 'left' | 'right') {
     handleSwiped(direction === 'right' ? 'accepted' : 'rejected');
   }
@@ -246,10 +263,17 @@ export default function SwipeScreen() {
       <View style={styles.deck}>
         <BackgroundCard job={nextNext} scale={0.92} opacity={0.4} />
         <BackgroundCard job={next} scale={0.96} opacity={0.7} />
-        <SwipeCard key={current.id} job={current} onSwiped={handleSwiped} onApply={handleApply} isTop />
+        <SwipeCard
+          key={current.id}
+          job={current}
+          onSwiped={handleSwiped}
+          onApply={handleApply}
+          onOpenDetail={handleOpenDetail}
+          isTop
+        />
       </View>
 
-      <View style={[styles.actions, { paddingBottom: insets.bottom + 100 }]}>
+      <View style={[styles.actions, { paddingBottom: insets.bottom + 24 }]}>
         <Pressable style={[styles.actionButton, styles.rejectButton]} onPress={() => manualSwipe('left')}>
           <Text style={styles.rejectButtonText}>✕</Text>
         </Pressable>
@@ -261,40 +285,41 @@ export default function SwipeScreen() {
   );
 }
 
-const CARD_WIDTH = SCREEN_W - 24;
-const CARD_HEIGHT = SCREEN_H * 0.62;
+const CARD_WIDTH = SCREEN_W - 32;
+const CARD_HEIGHT = SCREEN_H * 0.58;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   centered: { flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  header: { fontSize: 22, fontWeight: '600', color: NAVY, paddingHorizontal: 20, paddingBottom: 8 },
+  header: { fontFamily: FONTS.bold, fontSize: 22, color: NAVY, paddingHorizontal: 20, paddingBottom: 4 },
   deck: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   card: {
     position: 'absolute', width: CARD_WIDTH, height: CARD_HEIGHT,
-    backgroundColor: '#FFFFFF', borderRadius: 22, padding: 22,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24,
     borderWidth: 1, borderColor: '#E5E2DA',
-    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 },
+    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 6 },
     justifyContent: 'space-between',
   },
   cardTop: { flex: 1 },
-  jobTitle: { fontSize: 22, fontWeight: '700', color: NAVY, marginBottom: 2 },
-  jobCompany: { fontSize: 14, color: GRAY, marginBottom: 12 },
+  jobTitle: { fontFamily: FONTS.bold, fontSize: 22, color: NAVY, marginBottom: 2 },
+  jobCompany: { fontFamily: FONTS.regular, fontSize: 14, color: GRAY, marginBottom: 12 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   metaChip: {
-    fontSize: 11, color: GRAY, backgroundColor: '#F0EEE9',
+    fontFamily: FONTS.semibold, fontSize: 11, color: GRAY, backgroundColor: '#F0EEE9',
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, overflow: 'hidden',
   },
   metaChipTeal: { color: TEAL, backgroundColor: '#E4EFEC' },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   tag: {
-    fontSize: 11, fontWeight: '600', color: NAVY, borderWidth: 1, borderColor: '#E5E2DA',
+    fontFamily: FONTS.semibold, fontSize: 11, color: NAVY, borderWidth: 1, borderColor: '#E5E2DA',
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
   },
-  jobDescription: { fontSize: 13.5, color: NAVY, lineHeight: 19 },
+  jobDescription: { fontFamily: FONTS.regular, fontSize: 13.5, color: NAVY, lineHeight: 19 },
+  readMore: { fontFamily: FONTS.semibold, fontSize: 11, color: TEAL, marginTop: 8 },
   applyButton: {
     backgroundColor: NAVY, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 12,
   },
-  applyButtonText: { color: BG, fontSize: 14, fontWeight: '700' },
+  applyButtonText: { fontFamily: FONTS.semibold, color: BG, fontSize: 14 },
   badge: {
     position: 'absolute', top: 24, zIndex: 10,
     borderWidth: 3, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 4,
@@ -302,7 +327,7 @@ const styles = StyleSheet.create({
   },
   likeBadge: { left: 20, borderColor: TEAL },
   nopeBadge: { right: 20, borderColor: TERRACOTTA, transform: [{ rotate: '12deg' }] },
-  badgeText: { fontSize: 20, fontWeight: '800', letterSpacing: 1 },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 20, letterSpacing: 1 },
   actions: { flexDirection: 'row', justifyContent: 'center', gap: 24, paddingTop: 8 },
   actionButton: {
     width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5,
@@ -312,8 +337,8 @@ const styles = StyleSheet.create({
   rejectButtonText: { color: TERRACOTTA, fontSize: 24, fontWeight: '700' },
   acceptButton: { borderColor: TEAL },
   acceptButtonText: { color: TEAL, fontSize: 24, fontWeight: '700' },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: NAVY, marginBottom: 6 },
-  emptySubtitle: { fontSize: 14, color: GRAY, textAlign: 'center', marginBottom: 20 },
+  emptyTitle: { fontFamily: FONTS.bold, fontSize: 18, color: NAVY, marginBottom: 6 },
+  emptySubtitle: { fontFamily: FONTS.regular, fontSize: 14, color: GRAY, textAlign: 'center', marginBottom: 20 },
   refreshButton: { backgroundColor: TEAL, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
-  refreshButtonText: { color: BG, fontSize: 15, fontWeight: '600' },
+  refreshButtonText: { fontFamily: FONTS.semibold, color: BG, fontSize: 15 },
 });
